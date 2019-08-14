@@ -1,37 +1,29 @@
 
-// A Java program for a Server
 import java.net.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Random;
 import java.util.Vector;
 
-import static java.lang.Math.floorMod;
+
 
 public class servermult
 {
-    //initialize socket and input stream
-    private Socket          socket   = null;
-    private ServerSocket    server   = null;
-    private Socket clientSocket;
-    private ObjectOutputStream objectOutputStream;
-    private ObjectInputStream  objectInputStream;
-    private Random random;
-    private Vector<ObjectOutputStream> clients;
 
-    // constructor with port
-    public servermult(int port)
+    /***
+     * @param port The port at which clients will connect
+     * The constructor servermult creates a serverSocket and a new thread for each client trying to connect to the server
+     */
+
+    private servermult(int port)
     {
 
 
-        clients = new Vector<ObjectOutputStream>();
+        Vector<ObjectOutputStream> clients = new Vector<>();
 
-        // starts server and waits for a connection
         try
         {
-            server = new ServerSocket(port);
+            ServerSocket server = new ServerSocket(port);
             while(true) {
-                socket = server.accept();
+                Socket socket = server.accept();
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
                 clients.add(objectOutputStream);
                 new Thread(new serverthread(socket, clients, objectOutputStream)).start();
@@ -40,7 +32,7 @@ public class servermult
         }
         catch(IOException i)
         {
-            System.out.println(i);
+            System.out.println(i.getMessage());
         }
     }
 

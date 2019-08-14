@@ -1,25 +1,32 @@
 
-// A Java program for a Client
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Scanner;
 
 import static java.lang.Math.floorMod;
 
 public class ClientMult
 {
-    // initialize socket and input output streams
-    private Socket socket            = null;
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
 
-    // constructor to put ip address and port
-    public ClientMult(String address, int port, boolean active /*soruce/receiver*/, String msg)
+    /***
+     *
+     * @param address The servers ip address
+     * @param port The port to use for the servef conncetion
+     * @param active Wether the client will receive or write a message
+     * @param msg The message to send
+     *
+     * This constructor tries to estblish a connection to the server and encrypts or decrypts a message with the cesar
+     * cipher and sends it to or receives it from the server.
+     *
+     */
+    private ClientMult(String address, int port, boolean active /*source/receiver*/, String msg)
     {
+        Socket socket = null;
         try
         {
             socket = new Socket(address, port);
@@ -28,65 +35,34 @@ public class ClientMult
             objectInputStream  = new ObjectInputStream(socket.getInputStream());
 
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-        }
-        catch(UnknownHostException u)
-        {
-            System.out.println(u);
-        }
-        catch(IOException i)
+        } catch(IOException i)
         {
             System.out.println(i);
         }
 
-        // string to read message from input
-        String line = "";
 
-        // keep reading until "Over" is input
         if(active) {
             try {
                 //abcedfghijklmnopqrstuvwxyz
                 objectOutputStream.writeObject("request");
                 String stringCipher = (String) objectInputStream.readObject();
                 int cipher = Integer.parseInt(stringCipher, 16);
-                String plain_msg = msg;
 
-                StringBuffer encrypted_msg = new StringBuffer();
-                for (char c : plain_msg.toCharArray()) {
-                    if ((int) c < 0x5B && (int) c > 0x40) {
-                        //System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
-                        int enc = (c + cipher - 65);
-                        enc = (char) ((floorMod(enc, 26) >= 0 ? floorMod(enc, 26) : floorMod(enc, 26) + 26));
-                        enc += 65;
-                        //System.out.println("Dec: " + (int)enc + "," + (char)enc);
-                        encrypted_msg.append((char) (enc));
-                        //System.out.println(c);
-
-                    } else {
-                        //System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
-                        int enc = (c + cipher - 97);
-                        enc = (char) ((floorMod(enc, 26) >= 0 ? floorMod(enc, 26) : floorMod(enc, 26) + 26));
-                        enc += 97;
-                        //System.out.println("Dec: " + (int)enc + "," + (char)enc);
-                        encrypted_msg.append((char) enc);
-                        //System.out.println((int) enc + "," + enc);
-                    }
-                }
-                objectOutputStream.writeObject(encrypted_msg.toString());
-                //objectOutputStream.writeObject(cipher);
+                String encrypted_msg = cesarCipher(cipher, msg);
+                objectOutputStream.writeObject(encrypted_msg);
                 System.out.println("Cipher: " + stringCipher);
                 System.out.println("Plain text: " + msg);
-                System.out.println("Encrypted message: " + encrypted_msg.toString());
+                System.out.println("Encrypted message: " + encrypted_msg);
 
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
 
-            // close the connection
             try {
                 objectInputStream.close();
                 objectOutputStream.close();
                 socket.close();
-            } catch (IOException i) {
+            } catch (Exception i) {
                 System.out.println(i);
             }
         }
@@ -99,30 +75,9 @@ public class ClientMult
                     int cipher = Integer.parseInt(stringCipher, 16);
 
                     String message = (String) objectInputStream.readObject();
-                    StringBuffer decrypted = new StringBuffer();
-
-                    for (char c : message.toCharArray()) {
-                        if ((int) c < 0x5B && (int) c > 0x40) {
-                            //System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
-                            int enc = (c - cipher - 65);
-                            enc = (char) ((floorMod(enc, 26) >= 0 ? floorMod(enc, 26) : floorMod(enc, 26) + 26));
-                            enc += 65;
-                            decrypted.append((char) enc);
-                            //System.out.println("Dec: " + (int)enc + "," + (char)enc);
-                            //System.out.println(c);
-                        } else {
-                            //System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
-                            int enc = (c - cipher - 97);
-                            enc = (char) ((floorMod(enc, 26) >= 0 ? floorMod(enc, 26) : floorMod(enc, 26) + 26));
-                            enc += 97;
-                            decrypted.append((char) enc);
-                            //System.out.println("Dec: " + (int)enc + "," + (char)enc);
-
-
-                        }
-                    }
+                    String decrypted = cesarCipher((-1)*cipher, message);
                     System.out.println("Cipher: " + stringCipher);
-                    System.out.println("Plain text: " + decrypted.toString());
+                    System.out.println("Plain text: " + decrypted);
                     System.out.println("Encrypted message: " + message);
 
                 }
@@ -134,9 +89,17 @@ public class ClientMult
         }
     }
 
+    /***
+     *
+     * @param args
+     *
+     * Takes input form the client such as wether it wants to be a receiver or write a message and the message to send
+     * to the other clients
+     *
+     */
+
     public static void main(String args[])
     {
-        int a = 0x0a;
         Scanner scanner = new Scanner(System. in);
         String inputString;
         boolean activate;
@@ -161,5 +124,43 @@ public class ClientMult
 
         activate = inputString.equals("W");
         ClientMult client = new ClientMult("localhost", 8000, activate, msg);
+    }
+
+
+    /***
+     *
+     * @param cipher the cesat cipher used for encryption/decryption
+     * @param msg the message to encrypt/decrypt
+     * @return the resulting string
+     *
+     * This function is used to encrypt or decrypt a message accoring the the cesar cipher cryptographic algorithm.
+     * It is designed to work with Strings containing only the letters [A-Z] and [a-z]
+     * */
+
+    private String cesarCipher(int cipher, String msg)
+    {
+
+        StringBuilder encrypted_msg = new StringBuilder();
+        for (char c : msg.toCharArray()) {
+            if ((int) c < 0x5B && (int) c > 0x40) {
+                //System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
+                int enc = (c + cipher - 65);
+                enc = (char) ((floorMod(enc, 26) >= 0 ? floorMod(enc, 26) : floorMod(enc, 26) + 26));
+                enc += 65;
+                //System.out.println("Dec: " + (int)enc + "," + (char)enc);
+                encrypted_msg.append((char) (enc));
+                //System.out.println(c);
+
+            } else {
+                //System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
+                int enc = (c + cipher - 97);
+                enc = (char) ((floorMod(enc, 26) >= 0 ? floorMod(enc, 26) : floorMod(enc, 26) + 26));
+                enc += 97;
+                //System.out.println("Dec: " + (int)enc + "," + (char)enc);
+                encrypted_msg.append((char) enc);
+                //System.out.println((int) enc + "," + enc);
+            }
+        }
+        return encrypted_msg.toString();
     }
 }
