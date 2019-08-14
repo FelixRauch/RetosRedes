@@ -24,8 +24,8 @@ public class Client
 
             objectInputStream  = new ObjectInputStream(socket.getInputStream());
 
-            // sends output to the socket
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+
         }
         catch(UnknownHostException u)
         {
@@ -55,22 +55,22 @@ public class Client
                 {
                     if((int)c < 0x5B && (int)c > 0x40)
                     {
-                        System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
+                        //System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
                         int enc = (c - cipher - 65);
                         enc = (char)((floorMod(enc, 26) >= 0 ? floorMod(enc, 26) : floorMod(enc , 26) + 26));
                         enc += 65;
                         decrypted.append((char)enc);
-                        System.out.println("Dec: " + (int)enc + "," + (char)enc);
+                        //System.out.println("Dec: " + (int)enc + "," + (char)enc);
                         //System.out.println(c);
                     }
                     else
                     {
-                        System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
+                        //System.out.println("Enc: "+ (int)c + "," + c + ",Cipher: " +  cipher);
                         int enc = (c - cipher - 97);
                         enc = (char)((floorMod(enc, 26) >= 0 ? floorMod(enc, 26) : floorMod(enc , 26) + 26));
                         enc += 97;
                         decrypted.append((char)enc);
-                        System.out.println("Dec: " + (int)enc + "," + (char)enc);
+                        //System.out.println("Dec: " + (int)enc + "," + (char)enc);
 
 
 
